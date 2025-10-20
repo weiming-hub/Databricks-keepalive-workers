@@ -1,21 +1,119 @@
 // 环境变量优先，没有则使用代码里填写的
 const DEFAULT_CONFIG = {
-  DATABRICKS_HOST: 'https://dbc-1223456789.cloud.databricks.com', // 填写工作区host或添加环境变量,变量名：DATABRICKS_HOST
-  DATABRICKS_TOKEN: 'dapi6dae4632d66931ecdeefe8808f12678dse'        // 填写token或添加环境变量,变量名：DATABRICKS_TOKEN
+  DATABRICKS_HOST: 'https://dbc-1223456789.cloud.databricks.com',    // 填写工作区host或添加环境变量,变量名：DATABRICKS_HOST
+  DATABRICKS_TOKEN: 'dapi6dae4632d66931ecdeefe8808f12678dse',        // 填写token或添加环境变量,变量名：DATABRICKS_TOKEN
+  CHAT_ID: '',                   // Telegram聊天CHAT_ID,须同时填写BOT_TOKEN(可选配置)
+  BOT_TOKEN: ''                  // Telegram机器人,须同时填写CHAT_ID
 };
 
+// 获取配置
 function getConfig(env) {
   const host = env.DATABRICKS_HOST || DEFAULT_CONFIG.DATABRICKS_HOST;
   const token = env.DATABRICKS_TOKEN || DEFAULT_CONFIG.DATABRICKS_TOKEN;
+  const chatId = env.CHAT_ID || DEFAULT_CONFIG.CHAT_ID;
+  const botToken = env.BOT_TOKEN || DEFAULT_CONFIG.BOT_TOKEN;
   
   return {
     DATABRICKS_HOST: host,
     DATABRICKS_TOKEN: token,
+    CHAT_ID: chatId,
+    BOT_TOKEN: botToken,
     source: {
       host: env.DATABRICKS_HOST ? '环境变量' : '默认值',
-      token: env.DATABRICKS_TOKEN ? '环境变量' : '默认值'
+      token: env.DATABRICKS_TOKEN ? '环境变量' : '默认值',
+      chatId: env.CHAT_ID ? '环境变量' : '默认值',
+      botToken: env.BOT_TOKEN ? '环境变量' : '默认值'
     }
   };
+}
+
+// 发送 Telegram 通知
+async function sendTelegramNotification(config, message) {
+  const { CHAT_ID, BOT_TOKEN } = config;
+  
+  // 检查是否配置了 Telegram
+  if (!CHAT_ID || !BOT_TOKEN) {
+    console.log('Telegram 通知未配置，跳过发送');
+    return false;
+  }
+  
+  try {
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: message,
+        parse_mode: 'HTML'
+      }),
+    });
+    
+    const result = await response.json();
+    
+    if (result.ok) {
+      console.log('Telegram 通知发送成功');
+      return true;
+    } else {
+      console.error('Telegram 通知发送失败:', result);
+      return false;
+    }
+  } catch (error) {
+    console.error('发送 Telegram 通知时出错:', error);
+    return false;
+  }
+}
+
+// 发送离线通知
+async function sendOfflineNotification(config, appName, appId) {
+  const message = `🚨 <b>Databricks App 离线</b>\n\n` +
+                 `📱 App: <code>${appName}</code>\n` +
+                 `🆔 ID: <code>${appId}</code>\n` +
+                 `⏰ 时间: ${new Date().toLocaleString('zh-CN')}\n\n` +
+                 `⚡ 系统正在尝试自动重启...`;
+  
+  return await sendTelegramNotification(config, message);
+}
+
+// 发送启动成功通知
+async function sendStartSuccessNotification(config, appName, appId) {
+  const message = `✅ <b>Databricks App 启动成功</b>\n\n` +
+                 `📱 App: <code>${appName}</code>\n` +
+                 `🆔 ID: <code>${appId}</code>\n` +
+                 `⏰ 时间: ${new Date().toLocaleString('zh-CN')}\n\n` +
+                 `🎉 App 现在已在线并运行中`;
+  
+  return await sendTelegramNotification(config, message);
+}
+
+// 发送启动失败通知
+async function sendStartFailedNotification(config, appName, appId, error) {
+  const message = `❌ <b>Databricks App 启动失败</b>\n\n` +
+                 `📱 App: <code>${appName}</code>\n` +
+                 `🆔 ID: <code>${appId}</code>\n` +
+                 `⏰ 时间: ${new Date().toLocaleString('zh-CN')}\n` +
+                 `💥 错误: <code>${error}</code>\n\n` +
+                 `🔧 请检查 App 配置或手动干预`;
+  
+  return await sendTelegramNotification(config, message);
+}
+
+// 发送批量操作通知
+async function sendBatchOperationNotification(config, operation, results) {
+  const successCount = results.filter(r => r.status === 'started').length;
+  const failedCount = results.filter(r => r.status === 'start_failed' || r.status === 'error').length;
+  const stoppedCount = results.filter(r => r.computeState === 'STOPPED').length;
+  
+  const message = `📊 <b>Databricks Apps ${operation}</b>\n\n` +
+                 `✅ 成功启动: ${successCount} 个\n` +
+                 `❌ 启动失败: ${failedCount} 个\n` +
+                 `⏸️ 停止状态: ${stoppedCount} 个\n` +
+                 `⏰ 时间: ${new Date().toLocaleString('zh-CN')}`;
+  
+  return await sendTelegramNotification(config, message);
 }
 
 // 获取 Apps 列表
@@ -95,6 +193,9 @@ async function checkAndStartApps(config) {
     results.push(result);
   }
   
+  // 发送批量操作通知
+  await sendBatchOperationNotification(config, '定时检查', results);
+  
   return results;
 }
 
@@ -111,6 +212,9 @@ async function startStoppedApps(config) {
     results.push(result);
   }
   
+  // 发送批量操作通知
+  await sendBatchOperationNotification(config, '手动启动', results);
+  
   return results;
 }
 
@@ -124,6 +228,10 @@ async function processApp(app, config) {
 
   if (computeState === 'STOPPED') {
     console.log(`⚡ 启动停止的 App: ${appName}`);
+    
+    // 发送离线通知
+    await sendOfflineNotification(config, appName, appId);
+    
     return await startSingleApp(app, config);
   } else {
     console.log(`✅ App ${appName} 状态正常: ${computeState}`);
@@ -163,6 +271,10 @@ async function startSingleApp(app, config) {
 
     if (startResponse.ok) {
       console.log(`✅ App ${appName} 启动成功`);
+      
+      // 发送启动成功通知
+      await sendStartSuccessNotification(config, appName, appId);
+      
       return { 
         app: appName, 
         appId: appId, 
@@ -180,6 +292,11 @@ async function startSingleApp(app, config) {
         errorDetails = { message: responseText };
       }
       
+      const errorMessage = errorDetails.message || '未知错误';
+      
+      // 发送启动失败通知
+      await sendStartFailedNotification(config, appName, appId, errorMessage);
+      
       return { 
         app: appName, 
         appId: appId, 
@@ -190,6 +307,10 @@ async function startSingleApp(app, config) {
     }
   } catch (error) {
     console.error(`❌ App ${appName} 启动请求错误:`, error);
+    
+    // 发送启动失败通知
+    await sendStartFailedNotification(config, appName, appId, error.message);
+    
     return { 
       app: appName, 
       appId: appId, 
@@ -249,6 +370,7 @@ function getFrontendHTML() {
         .footer-links { display: flex; justify-content: center; gap: 20px; padding: 20px; background: #2c3e50; margin-top: 30px; }
         .footer-links a { color: white; text-decoration: none; font-weight: 500; transition: color 0.3s ease; display: flex; align-items: center; gap: 8px; }
         .footer-links a:hover { color: #4da8ff; }
+        .notification-status { background: #e7f3ff; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #007bff; }
         @media (max-width: 768px) {
             .controls { flex-direction: column; align-items: stretch; }
             .btn { justify-content: center; }
@@ -265,10 +387,16 @@ function getFrontendHTML() {
             <p>实时监控和管理你的 Databricks Apps</p>
         </div>
         
+        <div class="notification-status" id="notificationStatus">
+            <strong>📢 通知状态:</strong> 
+            <span id="telegramStatus">检查中...</span>
+        </div>
+        
         <div class="controls">
             <button class="btn btn-primary" onclick="refreshStatus()">🔄 刷新状态</button>
             <button class="btn btn-success" onclick="startStoppedApps()">⚡ 启动停止的 Apps</button>
             <button class="btn btn-info" onclick="checkAndStart()">🔍 检查并自动启动</button>
+            <button class="btn" onclick="testNotification()" style="background: #6f42c1; color: white;">🔔 测试通知</button>
             <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
                 <span id="lastUpdated">-</span>
                 <div id="loadingIndicator" style="display: none;">加载中...</div>
@@ -299,6 +427,7 @@ function getFrontendHTML() {
             <div class="route-item"><strong>GET /check</strong> - 检查并自动启动停止的 Apps</div>
             <div class="route-item"><strong>POST /start</strong> - 手动启动所有停止的 Apps</div>
             <div class="route-item"><strong>GET /config</strong> - 查看当前配置信息</div>
+            <div class="route-item"><strong>POST /test-notification</strong> - 测试 Telegram 通知</div>
         </div>
         
         <div class="footer-links">
@@ -329,7 +458,48 @@ function getFrontendHTML() {
         // 页面加载时获取状态
         document.addEventListener('DOMContentLoaded', function() {
             refreshStatus();
+            checkTelegramStatus();
         });
+        
+        // 检查 Telegram 状态
+        async function checkTelegramStatus() {
+            try {
+                const response = await fetch('/config');
+                const data = await response.json();
+                
+                const statusEl = document.getElementById('telegramStatus');
+                if (data.DATABRICKS_HOST && data.DATABRICKS_TOKEN) {
+                    if (data.CHAT_ID && data.BOT_TOKEN) {
+                        statusEl.innerHTML = '<span style="color: #28a745;">✅ Telegram 通知已配置</span>';
+                    } else {
+                        statusEl.innerHTML = '<span style="color: #ffc107;">⚠️ Telegram 通知未配置</span>';
+                    }
+                } else {
+                    statusEl.innerHTML = '<span style="color: #dc3545;">❌ 基础配置缺失</span>';
+                }
+            } catch (error) {
+                document.getElementById('telegramStatus').innerHTML = '<span style="color: #dc3545;">❌ 检查失败</span>';
+            }
+        }
+        
+        // 测试通知
+        async function testNotification() {
+            setLoading(true);
+            try {
+                const response = await fetch('/test-notification', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('测试通知发送成功，请检查 Telegram', 'success');
+                } else {
+                    showMessage('测试通知发送失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('请求失败: ' + error.message, 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
         
         // 显示消息
         function showMessage(message, type = 'info') {
@@ -503,12 +673,22 @@ function getFrontendHTML() {
             document.getElementById('lastUpdated').textContent = '最后更新: ' + now.toLocaleTimeString();
         }
         
-        // 每2分钟自动刷新一次
-        setInterval(refreshStatus, 2 * 60 * 1000);
+        // 每10分钟自动刷新一次
+        setInterval(refreshStatus, 10 * 60 * 1000);
     </script>
 </body>
 </html>
   `;
+}
+
+// 测试通知函数
+async function testNotification(config) {
+  const message = `🔔 <b>Databricks Apps 监控测试通知</b>\n\n` +
+                 `✅ 这是一条测试消息\n` +
+                 `⏰ 时间: ${new Date().toLocaleString('zh-CN')}\n\n` +
+                 `🎉 如果你的 Telegram 配置正确，你应该能收到这条消息`;
+  
+  return await sendTelegramNotification(config, message);
 }
 
 // 主 Worker 处理器
@@ -598,14 +778,50 @@ export default {
       const config = getConfig(env);
       const maskedToken = config.DATABRICKS_TOKEN ? 
         config.DATABRICKS_TOKEN.substring(0, 10) + '...' : '未设置';
+      const maskedBotToken = config.BOT_TOKEN ? 
+        config.BOT_TOKEN.substring(0, 10) + '...' : '未设置';
       
       return new Response(JSON.stringify({
         DATABRICKS_HOST: config.DATABRICKS_HOST,
         DATABRICKS_TOKEN: maskedToken,
+        CHAT_ID: config.CHAT_ID || '未设置',
+        BOT_TOKEN: maskedBotToken,
         source: config.source
       }, null, 2), {
         headers: { 'Content-Type': 'application/json' }
       });
+    }
+    
+    if (path === '/test-notification') {
+      try {
+        const config = getConfig(env);
+        const success = await testNotification(config);
+        
+        if (success) {
+          return new Response(JSON.stringify({
+            success: true,
+            message: '测试通知发送成功'
+          }), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } else {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '测试通知发送失败，请检查 Telegram 配置'
+          }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      } catch (error) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message
+        }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
     }
     
     // 未知路由
@@ -613,10 +829,11 @@ export default {
       error: '路由不存在',
       available_routes: [
         { path: '/', method: 'GET', description: '前端管理界面' },
+        { path: '/status', method: 'GET', description: '获取当前 Apps 状态' },
         { path: '/check', method: 'GET', description: '检查并自动启动停止的 Apps' },
         { path: '/start', method: 'POST', description: '手动启动所有停止的 Apps' },
-        { path: '/status', method: 'GET', description: '获取当前 Apps 状态' },
-        { path: '/config', method: 'GET', description: '查看当前配置' }
+        { path: '/config', method: 'GET', description: '查看当前配置信息' },
+        { path: '/test-notification', method: 'POST', description: '测试 Telegram 通知' }
       ]
     }), {
       status: 404,

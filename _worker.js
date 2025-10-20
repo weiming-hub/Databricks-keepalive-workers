@@ -1,7 +1,7 @@
 // 环境变量优先，没有则使用代码里填写的
 const DEFAULT_CONFIG = {
   DATABRICKS_HOST: 'https://dbc-1223456789.cloud.databricks.com', // 填写工作区host或添加环境变量,变量名：DATABRICKS_HOST
-  DATABRICKS_TOKEN: 'dapi6dae4632d66931ecdeefe8808f20bdee'        // 填写token或添加环境变量,变量名：DATABRICKS_TOKEN
+  DATABRICKS_TOKEN: 'dapi6dae4632d66931ecdeefe8808f12678dse'        // 填写token或添加环境变量,变量名：DATABRICKS_TOKEN
 };
 
 function getConfig(env) {

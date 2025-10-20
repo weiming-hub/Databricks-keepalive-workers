@@ -14,7 +14,11 @@
 3. **(可选) Telegram BOT Token**: 用于发送通知的 Telegram Bot 令牌
 4. **(可选) Telegram Chat ID**: 接收通知的聊天caht id
 
-### 2. 配置方式
+### 2. 部署
+1. 登录你的cloudflare，创建一个新的workers，名称随意，编辑代码，删除原示例代码
+2. 打开此项目的_worker.js文件，复制代码粘贴到workers代码框中
+
+### 3. 配置变量
 
 有两种方式配置必要的参数：
 

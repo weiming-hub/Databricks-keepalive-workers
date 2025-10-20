@@ -84,7 +84,7 @@ async function sendStartSuccessNotification(config, appName, appId) {
                  `📱 App: <code>${appName}</code>\n` +
                  `🆔 ID: <code>${appId}</code>\n` +
                  `⏰ 时间: ${new Date().toLocaleString('zh-CN')}\n\n` +
-                 `🎉 App 现在已在线并运行中`;
+                 `🎉 App 正在启动中,10分钟后检查状态`;
   
   return await sendTelegramNotification(config, message);
 }
@@ -96,7 +96,7 @@ async function sendStartFailedNotification(config, appName, appId, error) {
                  `🆔 ID: <code>${appId}</code>\n` +
                  `⏰ 时间: ${new Date().toLocaleString('zh-CN')}\n` +
                  `💥 错误: <code>${error}</code>\n\n` +
-                 `🔧 请检查 App 配置或手动干预`;
+                 `🔧 请检查 App 配置或手动访问 域名/start 启动`;
   
   return await sendTelegramNotification(config, message);
 }
@@ -192,11 +192,6 @@ async function checkAndStartApps(config) {
     const result = await processApp(app, config);
     results.push(result);
   }
-  
-  // 发送批量操作通知
-  await sendBatchOperationNotification(config, '定时检查', results);
-  
-  return results;
 }
 
 // 启动停止的 Apps

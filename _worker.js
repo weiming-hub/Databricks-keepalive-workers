@@ -1,9 +1,9 @@
 // 环境变量优先，没有则使用代码里填写的
 const DEFAULT_CONFIG = {
-  DATABRICKS_HOST: 'https://dbc-1223456789.cloud.databricks.com',    // 填写工作区host或添加环境变量,变量名：DATABRICKS_HOST
-  DATABRICKS_TOKEN: 'dapi6dae4632d66931ecdeefe8808f12678dse',        // 填写token或添加环境变量,变量名：DATABRICKS_TOKEN
-  CHAT_ID: '',                                                       // Telegram聊天CHAT_ID,须同时填写BOT_TOKEN(可选配置)
-  BOT_TOKEN: ''                                                      // Telegram机器人,须同时填写CHAT_ID
+  DATABRICKS_HOST: 'https://abc-1223456789.cloud.databricks.com',    // (必填)直接在单引号内填写工作区host或添加环境变量,变量名：DATABRICKS_HOST
+  DATABRICKS_TOKEN: 'dapi6dae4632d66931ecdeefe8808f12678dse',        // (必填)直接在单引号内填写token或添加环境变量,变量名：DATABRICKS_TOKEN
+  CHAT_ID: '',                                                       // 直接在单引号内填写Telegram聊天或添加环境变量CHAT_ID,须同时填写BOT_TOKEN(可选配置)
+  BOT_TOKEN: ''                                                      // 直接在单引号内填写Telegram机器人或添加环境变量,须同时填写CHAT_ID
 };
 
 // 获取配置

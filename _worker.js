@@ -84,7 +84,7 @@ async function sendStartSuccessNotification(config, appName, appId) {
                  `📱 App: <code>${appName}</code>\n` +
                  `🆔 ID: <code>${appId}</code>\n` +
                  `⏰ 时间: ${new Date().toLocaleString('zh-CN')}\n\n` +
-                 `🎉 App 正在启动中,10分钟后检查状态`;
+                 `🎉 App 正在启动中,过10分钟后再检查节点`;
   
   return await sendTelegramNotification(config, message);
 }
@@ -101,8 +101,8 @@ async function sendStartFailedNotification(config, appName, appId, error) {
   return await sendTelegramNotification(config, message);
 }
 
-// 发送批量操作通知
-async function sendBatchOperationNotification(config, operation, results) {
+// 发送手动操作通知
+async function sendManualOperationNotification(config, operation, results) {
   const successCount = results.filter(r => r.status === 'started').length;
   const failedCount = results.filter(r => r.status === 'start_failed' || r.status === 'error').length;
   const stoppedCount = results.filter(r => r.computeState === 'STOPPED').length;
@@ -183,7 +183,7 @@ async function getAppsStatus(config) {
   }
 }
 
-// 检查并启动 Apps
+// 检查并启动 Apps（定时任务使用）
 async function checkAndStartApps(config) {
   const apps = await getAppsList(config);
   const results = [];
@@ -192,9 +192,14 @@ async function checkAndStartApps(config) {
     const result = await processApp(app, config);
     results.push(result);
   }
+  
+  // 注意：定时检查不发送批量通知，只发送单个App的离线/启动通知
+  console.log(`定时检查完成，共处理 ${results.length} 个 Apps`);
+  
+  return results;
 }
 
-// 启动停止的 Apps
+// 启动停止的 Apps（手动操作使用）
 async function startStoppedApps(config) {
   const apps = await getAppsList(config);
   const stoppedApps = apps.filter(app => (app.compute_status?.state || 'UNKNOWN') === 'STOPPED');
@@ -207,8 +212,10 @@ async function startStoppedApps(config) {
     results.push(result);
   }
   
-  // 发送批量操作通知
-  await sendBatchOperationNotification(config, '手动启动', results);
+  // 手动操作发送汇总通知
+  if (stoppedApps.length > 0) {
+    await sendManualOperationNotification(config, '手动启动', results);
+  }
   
   return results;
 }
@@ -316,7 +323,7 @@ async function startSingleApp(app, config) {
   }
 }
 
-// 前端 HTML
+// 前端 HTML（保持不变）
 function getFrontendHTML() {
   return `
 <!DOCTYPE html>
@@ -328,7 +335,7 @@ function getFrontendHTML() {
     <style>
         /* 保持之前的样式不变 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; min-height: 100vh; padding: 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white: 100vh; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
         .header { background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 30px; text-align: center; }
         .header h1 { font-size: 2.5em; margin-bottom: 10px; }
@@ -385,6 +392,9 @@ function getFrontendHTML() {
         <div class="notification-status" id="notificationStatus">
             <strong>📢 通知状态:</strong> 
             <span id="telegramStatus">检查中...</span>
+            <div style="margin-top: 8px; font-size: 0.9em; color: #666;">
+                🔔 通知策略: 仅在App离线时和启动成功后发送通知，正常定时检查不发送通知
+            </div>
         </div>
         
         <div class="controls">
@@ -668,8 +678,8 @@ function getFrontendHTML() {
             document.getElementById('lastUpdated').textContent = '最后更新: ' + now.toLocaleTimeString();
         }
         
-        // 每10分钟自动刷新一次
-        setInterval(refreshStatus, 10 * 60 * 1000);
+        // 每60分钟自动刷新一次
+        setInterval(refreshStatus, 60 * 60 * 1000);
     </script>
 </body>
 </html>

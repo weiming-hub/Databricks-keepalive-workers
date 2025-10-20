@@ -69,7 +69,7 @@ async function sendTelegramNotification(config, message) {
 
 // 发送离线通知
 async function sendOfflineNotification(config, appName, appId) {
-  const message = `🚨 <b>Databricks App 离线</b>\n\n` +
+  const message = `🔴 <b>Databricks App 离线</b>\n\n` +
                  `📱 App: <code>${appName}</code>\n` +
                  `🆔 ID: <code>${appId}</code>\n` +
                  `⏰ 时间: ${new Date().toLocaleString('zh-CN')}\n\n` +

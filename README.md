@@ -17,7 +17,8 @@ Databricks部署节点视频教程：https://youtu.be/r35kK77PlLg
 
 ### 2. 部署
 1. 登录你的cloudflare，创建一个新的workers，名称随意，编辑代码，删除原示例代码
-2. 打开此项目的_worker.js文件，复制代码粘贴到workers代码框中
+2. 打开此项目的_worker.js文件，复制代码粘贴到workers代码框中，部署
+3. 设置cron触发器，3分钟或5分钟
 
 ### 3. 配置变量
 

@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "axios": "latest",
-    "dotenv": "latest",
     "express": "latest"
   },
   "engines": {

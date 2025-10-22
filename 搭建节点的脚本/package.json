@@ -1,11 +1,8 @@
 {
   "name": "nodejs",
   "version": "1.0.0",
-  "description": "nodejs",
+  "description": "sbx",
   "main": "index.js",
-  "author": "eooce",
-  "repository": "",
-  "license": "MIT",
   "private": false,
   "scripts": {
     "start": "node index.js"

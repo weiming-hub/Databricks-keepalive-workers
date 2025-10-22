@@ -9,11 +9,11 @@ Databricks部署节点视频教程：https://youtu.be/r35kK77PlLg
 ### 1. 准备工作
 
 在部署之前，你需要获取以下信息：
-
-1. **Databricks 工作区 Host**: 例如 `https://abc-123456789.cloud.databricks.com`
-2. **Databricks 访问 Token**: 用于 API 访问的个人访问令牌，点击右上角用户设置-选择"Developer" -> "Access Tokens"生成新的访问令牌
-3. **(可选) Telegram BOT Token**: 用于发送通知的 Telegram Bot 令牌
-4. **(可选) Telegram Chat ID**: 接收通知的聊天caht id
+1. **Argo 固定隧道域名**: 自己在cloudflare zero trust里创建的
+2. **Databricks 工作区 Host**: 例如 `https://abc-123456789.cloud.databricks.com`
+3. **Databricks 访问 Token**: 用于 API 访问的个人访问令牌，点击右上角用户设置-选择"Developer" -> "Access Tokens"生成新的访问令牌
+4. **(可选) Telegram BOT Token**: 用于发送通知的 Telegram Bot 令牌
+5. **(可选) Telegram Chat ID**: 接收通知的聊天caht id
 
 ### 2. 部署
 1. 登录你的cloudflare，创建一个新的workers，名称随意，编辑代码，删除原示例代码

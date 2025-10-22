@@ -31,7 +31,7 @@ Databricks部署节点视频教程：https://youtu.be/r35kK77PlLg
 #### 方法二：使用环境变量（推荐用于生产环境）
 
 在部署平台设置以下环境变量：
-
+- `ARGO_DOMAIN`: 节点的固定隧道域名
 - `DATABRICKS_HOST`: Databricks 工作区地址
 - `DATABRICKS_TOKEN`: Databricks 访问令牌
 - `CHAT_ID`: Telegram 聊天 ID（可选）
@@ -50,7 +50,7 @@ Databricks部署节点视频教程：https://youtu.be/r35kK77PlLg
 ### API 端点
 
 - `GET /status` - 获取当前所有 Apps 的状态
-- `GET /check` - 检查并自动启动停止的 Apps
+- `GET /check` - 检查检查app状态，若暂停自动启动
 - `POST /start` - 手动启动所有停止的 Apps
 - `GET /config` - 查看当前配置信息
 - `POST /test-notification` - 测试 Telegram 通知
@@ -83,9 +83,3 @@ Databricks部署节点视频教程：https://youtu.be/r35kK77PlLg
 1. 确认 BOT_TOKEN 和 CHAT_ID 已正确配置
 2. 验证 Bot 是否有向指定 Chat ID 发送消息的权限
 3. 使用 `/test-notification` 端点测试通知功能
-
-### 定时任务未执行
-
-1. 检查 Cron Trigger 配置是否正确
-2. 确认 Worker 已正确部署
-3. 查看 Worker 日志确认定时任务是否被触发

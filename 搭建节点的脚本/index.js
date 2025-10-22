@@ -22,9 +22,9 @@ const NEZHA_KEY = process.env.NEZHA_KEY || '';               // v1的NZ_CLIENT_S
 const ARGO_DOMAIN = process.env.ARGO_DOMAIN || '';           // argo固定隧道域名,留空即使用临时隧道
 const ARGO_AUTH = process.env.ARGO_AUTH || '';               // argo固定隧道token或json,留空即使用临时隧道
 const ARGO_PORT = process.env.ARGO_PORT || 8001;             // argo固定隧道端口,使用token需在cloudflare控制台设置和这里一致，否则节点不通
-const TUIC_PORT = process.env.TUIC_PORT || '';               // tuic端口，支持多端口的可以填写，否则留空
-const HY2_PORT = process.env.HY2_PORT || '';                 // hy2端口，支持多端口的可以填写，否则留空
-const REALITY_PORT = process.env.REALITY_PORT || '';         // reality端口，支持多端口的可以填写，否则留空
+const TUIC_PORT = process.env.TUIC_PORT || '';               // 此处变量留空不变，此平台不支持支持直连
+const HY2_PORT = process.env.HY2_PORT || '';                 // 此处变量留空不变，此平台不支持支持直连
+const REALITY_PORT = process.env.REALITY_PORT || '';         // 此处变量留空不变，此平台不支持支持直连
 const CFIP = process.env.CFIP || 'cdns.doon.eu.org';         // 优选域名或优选IP
 const CFPORT = process.env.CFPORT || 443;                    // 优选域名或优选IP对应端口
 const PORT = process.env.PORT || 3000;                       // http订阅端口    
@@ -32,7 +32,7 @@ const NAME = process.env.NAME || '';                         // 节点名称
 const CHAT_ID = process.env.CHAT_ID || '';                   // Telegram chat_id  两个变量不全不推送节点到TG 
 const BOT_TOKEN = process.env.BOT_TOKEN || '';               // Telegram bot_token 两个变量不全不推送节点到TG 
 
-require('dotenv').config();
+require('dotenv').config(); 
 
 //创建运行文件夹
 if (!fs.existsSync(FILE_PATH)) {
